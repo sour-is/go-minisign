@@ -6,10 +6,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/sour-is/xdg"
-
 	"github.com/pkg/errors"
+
 	"github.com/sour-is/go-minisign"
+	"github.com/sour-is/go-xdg"
 )
 
 func main() {
@@ -80,7 +80,11 @@ func run(args Args, _ io.ReadCloser, _ io.Writer) (err error) {
 			}
 
 			ok, err := pubkey.VerifyFromFile(f, *signature)
-			fmt.Println(ok, err)
+			if err != nil {
+				fmt.Println("RESULT", ok, err)
+				os.Exit(1)
+			}
+			fmt.Println("RESULT", ok)
 		}
 
 	case PrintHelp:
