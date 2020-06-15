@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
-	"github.com/adrg/xdg"
+	"github.com/sour-is/xdg"
 
 	"github.com/pkg/errors"
 	"github.com/sour-is/go-minisign"
@@ -31,6 +30,16 @@ func main() {
 	}
 }
 
+var MinisignPath = xdg.EnvDirs(
+	xdg.Env(minisign.SigDefaultConfigDirEnvVar),
+	xdg.PrependDir(
+		xdg.UserData,
+		xdg.NewDirs(
+			xdg.ParsePath(minisign.SigDefaultConfigDir),
+			xdg.ParsePath("."),
+			xdg.ParsePath("~"),
+		)))
+
 func run(args Args, _ io.ReadCloser, _ io.Writer) (err error) {
 	switch args.Mode {
 	case VerifyFiles:
@@ -46,23 +55,14 @@ func run(args Args, _ io.ReadCloser, _ io.Writer) (err error) {
 		}
 
 		if pubkey == nil && args.PubKeyFile != "" {
-			os.Setenv("XDG_CONFIG_DIRS",
-				joinPaths(
-					".",
-					os.Getenv("SigDefaultConfigDirEnvVar"),
-					minisign.SigDefaultConfigDir,
-					os.Getenv("XDG_CONFIG_DIRS"),
-				),
-			)
-			xdg.Reload()
-
 			var pubkeyfile string
-			if pubkeyfile, err = xdg.SearchConfigFile(args.PubKeyFile); err != nil {
+			if pubkeyfile, err = xdg.Find(MinisignPath, args.PubKeyFile); err != nil {
 				return errors.Wrap(err, "provided pubkey file not found")
 			}
-
-			if *pubkey, err = minisign.NewPublicKeyFromFile(pubkeyfile); err != nil {
+			if key, err := minisign.NewPublicKeyFromFile(pubkeyfile); err != nil {
 				return errors.Wrap(err, "provided pubkey file failed to parse")
+			} else {
+				pubkey = &key
 			}
 		}
 
@@ -90,16 +90,4 @@ func run(args Args, _ io.ReadCloser, _ io.Writer) (err error) {
 	}
 
 	return nil
-}
-
-func joinPaths(path ...string) string {
-	var arr = make([]string, len(path))
-
-	for _, s := range path {
-		if s != "" {
-			arr = append(arr, s)
-		}
-	}
-
-	return strings.Join(path, ":")
 }
