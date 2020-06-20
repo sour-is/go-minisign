@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sour-is/go-minisign"
-	"github.com/sour-is/go-xdg"
+	minisign "github.com/sour-is/go-minisign"
+	xdg "github.com/sour-is/go-xdg"
 )
 
 func main() {
@@ -30,11 +30,11 @@ func main() {
 	}
 }
 
-var MinisignPath = xdg.EnvDirs(
+var MinisignPath = xdg.EnvDefault(
 	xdg.Env(minisign.SigDefaultConfigDirEnvVar),
-	xdg.PrependDir(
+	xdg.Merge(
 		xdg.UserData,
-		xdg.NewDirs(
+		xdg.Merge(
 			xdg.ParsePath(minisign.SigDefaultConfigDir),
 			xdg.ParsePath("."),
 			xdg.ParsePath("~"),
